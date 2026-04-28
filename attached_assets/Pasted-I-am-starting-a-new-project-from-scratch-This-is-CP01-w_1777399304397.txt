@@ -1,0 +1,63 @@
+I am starting a new project from scratch. This is CP01-world ONLY — basic scaffolding. Do NOT build anything beyond what is listed.
+
+PROJECT CONSTRAINTS — do not violate any of these:
+- Vanilla JavaScript ONLY. No TypeScript, no React, no Vite, no Next.js, no build tools, no frameworks, no Tailwind, no bundlers.
+- Backend: Node.js 20+ with Express. Entry point is server.js at the project root.
+- Frontend: vanilla HTML, CSS, JS in /public.
+- Data storage: JSON files in /data only. No database.
+- Allowed npm packages right now: express, dotenv, express-session, nodemon. (groq-sdk comes later, do not install it yet.) Nothing else without asking me.
+- Never commit .env, data/users.json, or data/games.json.
+
+CP01-world goal: a runnable hello-world Express server with the exact required file tree, and NOTHING ELSE. No login, no game board, no styling, no UI components, no extra routes, no helpers, no /routes folder, no /lib folder.
+
+Create EXACTLY this file tree at the project root:
+
+├── .env
+├── .env.example
+├── .gitignore
+├── README.md
+├── package.json
+├── server.js
+├── /data
+│   ├── users.json
+│   └── games.json
+└── /public
+    ├── index.html
+    ├── styles.css
+    └── main.js
+
+File contents — keep MINIMAL. Empty or near-empty:
+- .env: empty file (it exists so the project runs; secrets get added later)
+- .env.example: empty file (I'll add keys later as I need them)
+- .gitignore: must contain exactly these four lines and nothing else:
+    node_modules/
+    .env
+    data/users.json
+    data/games.json
+- README.md: just the project title "Tic Tac Toe AI" as an h1 and one sentence saying it's a class project. Nothing else.
+- package.json: name, version, "type": "commonjs", a "start" script that runs "node server.js", a "dev" script that runs "nodemon server.js", and express + dotenv + express-session as dependencies, nodemon as devDependency. No other fields, no other packages.
+- server.js: minimum viable Express server. Loads dotenv, listens on process.env.PORT || 5000, binds to 0.0.0.0, serves /public as static, and has ONE route: GET / that responds with the index.html (express.static will handle this — do not write a custom handler). That's it. No session middleware yet, no other routes, no JSON parsing middleware, nothing.
+- public/index.html: literally just <!DOCTYPE html>, <html>, <head> with a <title>Tic Tac Toe AI</title> and a <link> to styles.css, and <body> containing <h1>Hello World</h1> and a <script src="main.js"></script>. Nothing else.
+- public/styles.css: empty file.
+- public/main.js: empty file.
+- data/users.json: contains exactly []
+- data/games.json: contains exactly []
+
+Replit config:
+- .replit should run "npm run dev"
+- Make sure server.js binds to 0.0.0.0 so the Webview works.
+
+Do NOT:
+- Add any UI components, buttons, forms, or styling
+- Add any routes besides what express.static handles
+- Add session middleware, body parsing, or any other middleware
+- Install groq-sdk, bcrypt, cors, helmet, morgan, or anything not on my allowed list
+- Create /routes, /lib, /views, or any folder I didn't list
+- Add TypeScript, .tsx files, tsconfig.json, vite.config, or any framework config
+- Add tests, eslint, prettier, or other tooling
+
+When you're done:
+1. List every file you created with a one-line description of each.
+2. Confirm you did NOT add anything outside the spec.
+3. Tell me how to verify it works (open Webview, see "Hello World").
+4. Tell me the exact git commands to commit and tag this as CP01-world after I push to my new GitHub repo.
