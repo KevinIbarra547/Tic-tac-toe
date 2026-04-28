@@ -1,27 +1,52 @@
-# Workspace
+# Tic Tac Toe AI
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Class project. CP01-world checkpoint: minimal vanilla JS Express scaffolding only.
 
 ## Stack
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Runtime**: Node.js 20+
+- **Backend**: Express
+- **Frontend**: vanilla HTML/CSS/JS in `/public`
+- **Storage**: JSON files in `/data` (no database)
+- **Package manager**: npm
 
-## Key Commands
+## Allowed packages
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- Runtime: `express`, `dotenv`, `express-session`
+- Dev: `nodemon`
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+`groq-sdk` is intentionally NOT installed yet. Do not add other packages without explicit user approval.
+
+## Structure
+
+```
+.
+├── .env                # empty (gitignored)
+├── .env.example        # empty
+├── .gitignore          # 4 lines: node_modules/, .env, data/users.json, data/games.json
+├── README.md
+├── package.json
+├── server.js           # Express entry (binds 0.0.0.0:PORT||5000)
+├── data/
+│   ├── users.json      # []
+│   └── games.json      # []
+└── public/
+    ├── index.html      # Hello World
+    ├── styles.css      # empty
+    └── main.js         # empty
+```
+
+## Commands
+
+- `npm run dev` — run with nodemon (used by the configured workflow)
+- `npm start` — run with node
+
+## Hard constraints (do not violate)
+
+- Vanilla JS only — no TypeScript, React, Vite, bundlers, frameworks
+- No database — JSON files in `/data` only
+- No `/routes`, `/lib`, `/views` folders
+- No extra middleware, routes, or packages without user approval
+- Never commit `.env`, `data/users.json`, `data/games.json`
