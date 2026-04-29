@@ -1,0 +1,29 @@
+The external URL is returning HTTP 502 in a fresh browser tab right now. URL: https://1e344a34-cf15-47ee-8631-968314725ce5-00-doiuwj85fgro.kirk.replit.dev — error reads "is currently unable to handle this request. HTTP ERROR 502."
+
+A 502 from Replit's proxy means the proxy is up but nothing is listening on the internal port it's forwarding to. So your previous claim that the workflow is running and the server is reachable is incorrect — please diagnose for real this time.
+
+Do these steps in order and SHOW ME the actual command output for each (do not summarize, paste the raw terminal output):
+
+1. Run: `ps aux | grep -E "node|nodemon" | grep -v grep`
+   — I want to see what node processes (if any) are actually alive.
+
+2. Run: `lsof -i :5000 -P -n`
+   — I want to see if anything is bound to port 5000. If this returns nothing, the server is not listening, full stop.
+
+3. Run: `cat .replit`
+   — Show me the FULL contents of the .replit file, including the [[ports]] section and any [workflows] or [[workflows.workflow]] sections. I need to see exactly how Replit is configured to start the app and expose ports.
+
+4. Run: `curl -v http://localhost:5000/ 2>&1 | head -40`
+   — I want to see the verbose output, including whether the connection is refused, accepted, or timing out.
+
+5. Based on what those four commands actually show, diagnose the real problem and fix it. Likely candidates:
+   - The workflow is not actually running (no node process exists).
+   - The server crashed silently after starting and you didn't notice.
+   - The .replit [[ports]] block maps the wrong port (e.g. 3000 leftover from Vite) so the proxy forwards to a port nothing listens on.
+   - The workflow's `waitForPort` is set to a different port than 5000.
+
+6. After fixing, re-run `curl -v http://localhost:5000/` AND tell me the public URL is now returning 200 (you can verify by running `curl -I https://1e344a34-cf15-47ee-8631-968314725ce5-00-doiuwj85fgro.kirk.replit.dev/`).
+
+Do NOT modify server.js, package.json, or any application code. The fix is in Replit config and process state, not in my app code. If you genuinely cannot edit .replit, tell me exactly which lines need to change and I'll edit it manually.
+
+Paste the raw output of all four commands in your reply.
