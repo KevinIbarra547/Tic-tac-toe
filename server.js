@@ -47,7 +47,7 @@ app.post('/signup', (req, res) => {
   }
   users.push({ username, password });
   writeUsers(users);
-  req.session.user = username;
+  req.session.user = { username };
   res.status(201).json({ username });
 });
 
@@ -58,7 +58,7 @@ app.post('/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  req.session.user = username;
+  req.session.user = { username };
   res.status(200).json({ username });
 });
 
@@ -70,7 +70,7 @@ app.post('/logout', (req, res) => {
 
 app.get('/me', (req, res) => {
   if (req.session.user) {
-    res.json({ loggedIn: true, username: req.session.user });
+    res.json({ loggedIn: true, username: req.session.user.username });
   } else {
     res.json({ loggedIn: false });
   }
