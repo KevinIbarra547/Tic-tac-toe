@@ -1,26 +1,52 @@
 // --- game state ---
+const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
 let board = Array(9).fill('');
 let currentTurn = 'X';
+let gameOver = false;
+
+function checkWinner(board) {
+  for (const [a, b, c] of WIN_LINES) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+  }
+  return null;
+}
 
 function renderBoard() {
   document.querySelectorAll('.cell').forEach((cell, i) => {
     cell.textContent = board[i];
-    cell.disabled = board[i] !== '';
+    cell.disabled = gameOver || board[i] !== '';
   });
-  document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
 }
 
 function newGame() {
   board = Array(9).fill('');
   currentTurn = 'X';
+  gameOver = false;
   renderBoard();
+  document.getElementById('turn-indicator').textContent = 'Current turn: X';
 }
 
 function makeMove(index) {
-  if (board[index] !== '') return;
+  if (gameOver || board[index] !== '') return;
   board[index] = currentTurn;
+
+  const winner = checkWinner(board);
+  if (winner) {
+    gameOver = true;
+    renderBoard();
+    document.getElementById('turn-indicator').textContent = `${winner} wins!`;
+    return;
+  }
+  if (!board.includes('')) {
+    gameOver = true;
+    renderBoard();
+    document.getElementById('turn-indicator').textContent = 'Draw';
+    return;
+  }
   currentTurn = currentTurn === 'X' ? 'O' : 'X';
   renderBoard();
+  document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
 }
 
 // --- auth ---
