@@ -55,7 +55,7 @@ async function saveGame(winner, result) {
   try {
     await fetch('/games', {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ winner, result, board: board.slice() })
     });
@@ -67,7 +67,7 @@ async function saveGame(winner, result) {
 
 async function loadHistory() {
   try {
-    const res = await fetch('/games', { credentials: 'same-origin' });
+    const res = await fetch('/games', { credentials: 'include' });
     if (!res.ok) return;
     const games = await res.json();
     const list = document.getElementById('history-list');
@@ -89,7 +89,7 @@ async function loadHistory() {
 
 // --- auth ---
 async function refreshStatus() {
-  const res = await fetch('/me', { credentials: 'same-origin' });
+  const res = await fetch('/me', { credentials: 'include' });
   const data = await res.json();
   const status = document.getElementById('status');
   const authForms = document.getElementById('auth-forms');
@@ -118,7 +118,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('signup-password').value;
   const res = await fetch('/signup', {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
@@ -136,7 +136,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('login-password').value;
   const res = await fetch('/login', {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
@@ -149,7 +149,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('logout-button').addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST', credentials: 'same-origin' });
+  await fetch('/logout', { method: 'POST', credentials: 'include' });
   await refreshStatus();
 });
 
