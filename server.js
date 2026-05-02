@@ -7,6 +7,7 @@ const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
+const GAMES_FILE = path.join(__dirname, 'data', 'games.json');
 
 if (!process.env.SESSION_SECRET) {
   console.warn('WARNING: SESSION_SECRET not set in .env, using dev fallback');
@@ -17,7 +18,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-fallback-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  cookie: { sameSite: 'lax' }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -34,6 +35,21 @@ function readUsers() {
 function writeUsers(users) {
   fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+function readGames() {
+  try {
+    const raw = fs.readFileSync(GAMES_FILE, 'utf8');
+    if (!raw.trim()) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeGames(games) {
+  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+  fs.writeFileSync(GAMES_FILE, JSON.stringify(games, null, 2));
 }
 
 app.post('/signup', (req, res) => {
@@ -66,6 +82,37 @@ app.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.status(200).json({ ok: true });
   });
+});
+
+app.post('/games', (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not logged in' });
+  const { winner, result, board } = req.body;
+  if (!['win', 'draw'].includes(result)) {
+    return res.status(400).json({ error: 'Invalid result' });
+  }
+  if (!Array.isArray(board) || board.length !== 9) {
+    return res.status(400).json({ error: 'Invalid board' });
+  }
+  const record = {
+    username: req.session.user.username,
+    winner: winner || null,
+    result,
+    board,
+    timestamp: new Date().toISOString()
+  };
+  const games = readGames();
+  games.push(record);
+  writeGames(games);
+  res.status(201).json(record);
+});
+
+app.get('/games', (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not logged in' });
+  const games = readGames();
+  const userGames = games
+    .filter(g => g.username === req.session.user.username)
+    .reverse();
+  res.json(userGames);
 });
 
 app.get('/me', (req, res) => {

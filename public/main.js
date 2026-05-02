@@ -36,12 +36,14 @@ function makeMove(index) {
     gameOver = true;
     renderBoard();
     document.getElementById('turn-indicator').textContent = `${winner} wins!`;
+    saveGame(winner, 'win');
     return;
   }
   if (!board.includes('')) {
     gameOver = true;
     renderBoard();
     document.getElementById('turn-indicator').textContent = 'Draw';
+    saveGame(null, 'draw');
     return;
   }
   currentTurn = currentTurn === 'X' ? 'O' : 'X';
@@ -49,9 +51,45 @@ function makeMove(index) {
   document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
 }
 
+async function saveGame(winner, result) {
+  try {
+    await fetch('/games', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ winner, result, board: board.slice() })
+    });
+    await loadHistory();
+  } catch (err) {
+    console.error('saveGame failed:', err);
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch('/games', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const games = await res.json();
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    games.forEach(game => {
+      const li = document.createElement('li');
+      const when = new Date(game.timestamp).toLocaleString();
+      if (game.result === 'win') {
+        li.textContent = `Win (${game.winner}) — ${when}`;
+      } else {
+        li.textContent = `Draw — ${when}`;
+      }
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error('loadHistory failed:', err);
+  }
+}
+
 // --- auth ---
 async function refreshStatus() {
-  const res = await fetch('/me');
+  const res = await fetch('/me', { credentials: 'same-origin' });
   const data = await res.json();
   const status = document.getElementById('status');
   const authForms = document.getElementById('auth-forms');
@@ -64,11 +102,13 @@ async function refreshStatus() {
     logoutBtn.style.display = '';
     game.style.display = '';
     newGame();
+    loadHistory();
   } else {
     status.textContent = 'Not logged in';
     authForms.style.display = '';
     logoutBtn.style.display = 'none';
     game.style.display = 'none';
+    document.getElementById('history-list').innerHTML = '';
   }
 }
 
@@ -78,6 +118,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('signup-password').value;
   const res = await fetch('/signup', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
@@ -95,6 +136,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('login-password').value;
   const res = await fetch('/login', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
@@ -107,7 +149,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('logout-button').addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST' });
+  await fetch('/logout', { method: 'POST', credentials: 'same-origin' });
   await refreshStatus();
 });
 
