@@ -36,17 +36,54 @@ function makeMove(index) {
     gameOver = true;
     renderBoard();
     document.getElementById('turn-indicator').textContent = `${winner} wins!`;
+    saveGame(winner, 'win');
     return;
   }
   if (!board.includes('')) {
     gameOver = true;
     renderBoard();
     document.getElementById('turn-indicator').textContent = 'Draw';
+    saveGame(null, 'draw');
     return;
   }
   currentTurn = currentTurn === 'X' ? 'O' : 'X';
   renderBoard();
   document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
+}
+
+async function saveGame(winner, result) {
+  try {
+    await fetch('/games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ winner, result, board: board.slice() })
+    });
+    await loadHistory();
+  } catch (err) {
+    console.error('saveGame failed:', err);
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch('/games');
+    if (!res.ok) return;
+    const games = await res.json();
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    games.forEach(game => {
+      const li = document.createElement('li');
+      const when = new Date(game.timestamp).toLocaleString();
+      if (game.result === 'win') {
+        li.textContent = `Win (${game.winner}) — ${when}`;
+      } else {
+        li.textContent = `Draw — ${when}`;
+      }
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error('loadHistory failed:', err);
+  }
 }
 
 // --- auth ---
@@ -64,11 +101,13 @@ async function refreshStatus() {
     logoutBtn.style.display = '';
     game.style.display = '';
     newGame();
+    loadHistory();
   } else {
     status.textContent = 'Not logged in';
     authForms.style.display = '';
     logoutBtn.style.display = 'none';
     game.style.display = 'none';
+    document.getElementById('history-list').innerHTML = '';
   }
 }
 
