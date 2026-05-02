@@ -1,0 +1,22 @@
+#board {
+  display: grid;
+  grid-template-columns: repeat(3, 60px);
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.cell {
+  aspect-ratio: 1;
+  font-size: 28px;
+  cursor: pointer;
+  background: white;
+  border: 1px solid #ccc;
+}
+
+.cell:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.cell:disabled {
+  cursor: default;
+}
