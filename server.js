@@ -18,7 +18,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-fallback-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  cookie: { sameSite: 'lax' }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
