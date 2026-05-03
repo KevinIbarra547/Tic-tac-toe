@@ -5,6 +5,11 @@ let board = Array(9).fill('');
 let currentTurn = 'X';
 let gameOver = false;
 
+function authHeaders() {
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
 function checkWinner(board) {
   for (const [a, b, c] of WIN_LINES) {
     if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
@@ -55,8 +60,7 @@ async function saveGame(winner, result) {
   try {
     await fetch('/games', {
       method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ winner, result, board: board.slice() })
     });
     await loadHistory();
@@ -67,7 +71,7 @@ async function saveGame(winner, result) {
 
 async function loadHistory() {
   try {
-    const res = await fetch('/games', { credentials: 'same-origin' });
+    const res = await fetch('/games', { headers: { ...authHeaders() } });
     if (!res.ok) return;
     const games = await res.json();
     const list = document.getElementById('history-list');
@@ -89,7 +93,7 @@ async function loadHistory() {
 
 // --- auth ---
 async function refreshStatus() {
-  const res = await fetch('/me', { credentials: 'same-origin' });
+  const res = await fetch('/me', { headers: { ...authHeaders() } });
   const data = await res.json();
   const status = document.getElementById('status');
   const authForms = document.getElementById('auth-forms');
@@ -118,11 +122,12 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('signup-password').value;
   const res = await fetch('/signup', {
     method: 'POST',
-    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
   if (res.ok) {
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
     await refreshStatus();
   } else {
     const data = await res.json();
@@ -136,11 +141,12 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const password = document.getElementById('login-password').value;
   const res = await fetch('/login', {
     method: 'POST',
-    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
   if (res.ok) {
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
     await refreshStatus();
   } else {
     const data = await res.json();
@@ -149,7 +155,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('logout-button').addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST', credentials: 'same-origin' });
+  await fetch('/logout', { method: 'POST', headers: { ...authHeaders() } });
+  localStorage.removeItem('token');
   await refreshStatus();
 });
 
