@@ -1,26 +1,15 @@
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
-const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const GAMES_FILE = path.join(__dirname, 'data', 'games.json');
 
-if (!process.env.SESSION_SECRET) {
-  console.warn('WARNING: SESSION_SECRET not set in .env, using dev fallback');
-}
-
 app.use(express.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-fallback-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { sameSite: 'lax' }
-}));
-app.use(express.static(path.join(__dirname, 'public')));
 
 function readUsers() {
   try {
@@ -52,6 +41,26 @@ function writeGames(games) {
   fs.writeFileSync(GAMES_FILE, JSON.stringify(games, null, 2));
 }
 
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function authMiddleware(req, res, next) {
+  const header = req.headers['authorization'];
+  if (!header || !header.startsWith('Bearer ')) {
+    req.user = null;
+    return next();
+  }
+  const token = header.slice(7);
+  const users = readUsers();
+  const user = users.find(u => u.token === token);
+  req.user = user ? { username: user.username } : null;
+  next();
+}
+
+app.use(authMiddleware);
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.post('/signup', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -61,31 +70,38 @@ app.post('/signup', (req, res) => {
   if (users.find(u => u.username === username)) {
     return res.status(409).json({ error: 'Username taken' });
   }
-  users.push({ username, password });
+  const token = generateToken();
+  users.push({ username, password, token });
   writeUsers(users);
-  req.session.user = { username };
-  res.status(201).json({ username });
+  res.status(201).json({ username, token });
 });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const users = readUsers();
-  const user = users.find(u => u.username === username && u.password === password);
-  if (!user) {
+  const userIndex = users.findIndex(u => u.username === username && u.password === password);
+  if (userIndex === -1) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  req.session.user = { username };
-  res.status(200).json({ username });
+  const token = generateToken();
+  users[userIndex].token = token;
+  writeUsers(users);
+  res.status(200).json({ username, token });
 });
 
 app.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.status(200).json({ ok: true });
-  });
+  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
+  const users = readUsers();
+  const userIndex = users.findIndex(u => u.username === req.user.username);
+  if (userIndex !== -1) {
+    users[userIndex].token = null;
+    writeUsers(users);
+  }
+  res.status(200).json({ ok: true });
 });
 
 app.post('/games', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not logged in' });
+  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const { winner, result, board } = req.body;
   if (!['win', 'draw'].includes(result)) {
     return res.status(400).json({ error: 'Invalid result' });
@@ -94,7 +110,7 @@ app.post('/games', (req, res) => {
     return res.status(400).json({ error: 'Invalid board' });
   }
   const record = {
-    username: req.session.user.username,
+    username: req.user.username,
     winner: winner || null,
     result,
     board,
@@ -107,17 +123,17 @@ app.post('/games', (req, res) => {
 });
 
 app.get('/games', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not logged in' });
+  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const games = readGames();
   const userGames = games
-    .filter(g => g.username === req.session.user.username)
+    .filter(g => g.username === req.user.username)
     .reverse();
   res.json(userGames);
 });
 
 app.get('/me', (req, res) => {
-  if (req.session.user) {
-    res.json({ loggedIn: true, username: req.session.user.username });
+  if (req.user) {
+    res.json({ loggedIn: true, username: req.user.username });
   } else {
     res.json({ loggedIn: false });
   }
