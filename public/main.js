@@ -4,6 +4,8 @@ const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,
 let board = Array(9).fill('');
 let currentTurn = 'X';
 let gameOver = false;
+let mode = 'pvp';
+let aiThinking = false;
 
 function authHeaders() {
   const token = localStorage.getItem('token');
@@ -24,10 +26,16 @@ function renderBoard() {
   });
 }
 
+function updateModeButtons() {
+  document.getElementById('mode-pvp').classList.toggle('active', mode === 'pvp');
+  document.getElementById('mode-pvai').classList.toggle('active', mode === 'pvai');
+}
+
 function newGame() {
   board = Array(9).fill('');
   currentTurn = 'X';
   gameOver = false;
+  aiThinking = false;
   renderBoard();
   document.getElementById('turn-indicator').textContent = 'Current turn: X';
 }
@@ -54,6 +62,33 @@ function makeMove(index) {
   currentTurn = currentTurn === 'X' ? 'O' : 'X';
   renderBoard();
   document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
+  if (mode === 'pvai' && !gameOver && currentTurn === 'O') aiTurn();
+}
+
+async function aiTurn() {
+  aiThinking = true;
+  try {
+    const res = await fetch('/ai-move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ board: board.slice() })
+    });
+    if (!res.ok) {
+      console.error('aiTurn: /ai-move returned', res.status);
+      return;
+    }
+    const data = await res.json();
+    const { move } = data;
+    if (typeof move !== 'number' || board[move] !== '') {
+      console.error('aiTurn: invalid move from server:', move);
+      return;
+    }
+    makeMove(move);
+  } catch (err) {
+    console.error('aiTurn failed:', err);
+  } finally {
+    aiThinking = false;
+  }
 }
 
 async function saveGame(winner, result) {
@@ -160,9 +195,24 @@ document.getElementById('logout-button').addEventListener('click', async () => {
   await refreshStatus();
 });
 
+document.getElementById('mode-pvp').addEventListener('click', () => {
+  if (mode === 'pvp') return;
+  mode = 'pvp';
+  updateModeButtons();
+  newGame();
+});
+
+document.getElementById('mode-pvai').addEventListener('click', () => {
+  if (mode === 'pvai') return;
+  mode = 'pvai';
+  updateModeButtons();
+  newGame();
+});
+
 document.getElementById('board').addEventListener('click', (e) => {
   const cell = e.target.closest('.cell');
   if (!cell || cell.disabled) return;
+  if (aiThinking) return;
   makeMove(Number(cell.dataset.index));
 });
 
