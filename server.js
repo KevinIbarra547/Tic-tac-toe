@@ -3,11 +3,18 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
+const Groq = require('groq-sdk');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const GAMES_FILE = path.join(__dirname, 'data', 'games.json');
+
+if (!process.env.GROQ_API_KEY) {
+  console.warn('WARNING: GROQ_API_KEY not set in .env — AI moves will use random fallback');
+}
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.use(express.json());
 
@@ -137,6 +144,56 @@ app.get('/me', (req, res) => {
   } else {
     res.json({ loggedIn: false });
   }
+});
+
+app.post('/ai-move', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
+
+  const { board } = req.body;
+  if (!Array.isArray(board) || board.length !== 9 ||
+      !board.every(c => c === 'X' || c === 'O' || c === '')) {
+    return res.status(400).json({ error: 'Invalid board' });
+  }
+
+  const available = [];
+  board.forEach((cell, i) => { if (cell === '') available.push(i); });
+
+  if (available.length === 0) {
+    return res.status(400).json({ error: 'No moves available' });
+  }
+
+  const fallback = available[Math.floor(Math.random() * available.length)];
+
+  const prompt = `You are playing Tic Tac Toe as player O. Positions are indexed 0-8, left-to-right, top-to-bottom:
+
+ 0 | 1 | 2
+-----------
+ 3 | 4 | 5
+-----------
+ 6 | 7 | 8
+
+Current board: ${JSON.stringify(board)}
+Available moves (empty positions): [${available.join(', ')}]
+
+Pick one index from the available moves list. Respond with ONLY valid JSON: {"move": <number>}`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }]
+      });
+      const parsed = JSON.parse(completion.choices[0].message.content);
+      const move = Number(parsed.move);
+      if (available.includes(move)) return res.json({ move });
+    } catch (_) {
+      // attempt failed, try again
+    }
+  }
+
+  res.json({ move: fallback });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

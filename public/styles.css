@@ -20,3 +20,16 @@
 .cell:disabled {
   cursor: default;
 }
+
+#mode-toggle {
+  margin-bottom: 8px;
+}
+
+#mode-toggle button {
+  margin-right: 4px;
+}
+
+#mode-toggle button.active {
+  background: #333;
+  color: white;
+}
