@@ -32,6 +32,22 @@
         <button id="mode-pvp" class="active" data-mode="pvp">vs Human</button>
         <button id="mode-pvai" data-mode="pvai">vs AI</button>
       </div>
+      <div id="ai-options" style="display:none">
+        <label>Difficulty:
+          <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+        <label>Personality:
+          <select id="personality">
+            <option value="pirate">Pirate</option>
+            <option value="wizard" selected>Wizard</option>
+            <option value="robot">Robot</option>
+          </select>
+        </label>
+      </div>
       <p id="turn-indicator">Current turn: X</p>
       <div id="board">
         <button class="cell" data-index="0"></button>
@@ -44,6 +60,7 @@
         <button class="cell" data-index="7"></button>
         <button class="cell" data-index="8"></button>
       </div>
+      <div id="ai-comment" style="display:none"></div>
       <button id="new-game-button">New game</button>
       <div id="history">
         <h3>Your game history</h3>

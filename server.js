@@ -146,13 +146,42 @@ app.get('/me', (req, res) => {
   }
 });
 
+const DIFFICULTY_INSTRUCTIONS = {
+  easy: `Pick a move, but make it slightly suboptimal — don't always block obvious threats and don't always take winning moves. Sometimes just pick a random available cell.`,
+  medium: `Play a reasonable game of tic-tac-toe. Block obvious threats and take winning moves when available, but you don't need to play perfectly.`,
+  hard: `Play tic-tac-toe optimally. Always take a winning move if available. Always block the opponent if they have two-in-a-row. Otherwise prefer center, then corners, then edges. Try to set up forks (two threats at once).`
+};
+
+const DIFFICULTY_TEMPS = { easy: 1.2, medium: 0.7, hard: 0.3 };
+
+const PERSONALITY_INSTRUCTIONS = {
+  pirate: `You talk like a stereotypical pirate. Use "Arrr", "matey", "ye", "scallywag", and reference treasure, ships, or the sea. Your comment must be 1 short sentence, max 12 words.`,
+  wizard: `You talk like a fantasy wizard. Reference magic, runes, ancient powers, prophecy, or spells. Your comment must be 1 short sentence, max 12 words.`,
+  robot: `You talk like a stereotypical robot/AI. Use ALL CAPS or stilted speech, reference probabilities, calculations, logic, processing. Use vocabulary like "INITIATING", "COMPUTING", "ERROR". Your comment must be 1 short sentence, max 12 words.`
+};
+
+const PERSONALITY_FALLBACKS = {
+  pirate: 'Arrr, that be me move.',
+  wizard: 'The runes have spoken.',
+  robot: 'MOVE EXECUTED.'
+};
+
 app.post('/ai-move', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
 
-  const { board } = req.body;
+  const { board, difficulty, personality } = req.body;
+
   if (!Array.isArray(board) || board.length !== 9 ||
       !board.every(c => c === 'X' || c === 'O' || c === '')) {
     return res.status(400).json({ error: 'Invalid board' });
+  }
+
+  if (!difficulty || !['easy', 'medium', 'hard'].includes(difficulty)) {
+    return res.status(400).json({ error: 'difficulty must be easy, medium, or hard' });
+  }
+
+  if (!personality || !['pirate', 'wizard', 'robot'].includes(personality)) {
+    return res.status(400).json({ error: 'personality must be pirate, wizard, or robot' });
   }
 
   const available = [];
@@ -162,7 +191,8 @@ app.post('/ai-move', async (req, res) => {
     return res.status(400).json({ error: 'No moves available' });
   }
 
-  const fallback = available[Math.floor(Math.random() * available.length)];
+  const fallbackMove = available[Math.floor(Math.random() * available.length)];
+  const fallbackComment = PERSONALITY_FALLBACKS[personality];
 
   const prompt = `You are playing Tic Tac Toe as player O. Positions are indexed 0-8, left-to-right, top-to-bottom:
 
@@ -175,25 +205,35 @@ app.post('/ai-move', async (req, res) => {
 Current board: ${JSON.stringify(board)}
 Available moves (empty positions): [${available.join(', ')}]
 
-Pick one index from the available moves list. Respond with ONLY valid JSON: {"move": <number>}`;
+SKILL LEVEL — how you play:
+${DIFFICULTY_INSTRUCTIONS[difficulty]}
+
+PERSONALITY — how you talk:
+${PERSONALITY_INSTRUCTIONS[personality]}
+
+Respond with ONLY valid JSON: {"move": <index from available moves>, "comment": "<one short in-character sentence, max 12 words>"}`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const completion = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
-        temperature: 0.7,
+        temperature: DIFFICULTY_TEMPS[difficulty],
         response_format: { type: 'json_object' },
         messages: [{ role: 'user', content: prompt }]
       });
       const parsed = JSON.parse(completion.choices[0].message.content);
       const move = Number(parsed.move);
-      if (available.includes(move)) return res.json({ move });
+      if (!available.includes(move)) continue;
+      const comment = (typeof parsed.comment === 'string' && parsed.comment.trim())
+        ? parsed.comment.trim()
+        : fallbackComment;
+      return res.json({ move, comment });
     } catch (_) {
       // attempt failed, try again
     }
   }
 
-  res.json({ move: fallback });
+  res.json({ move: fallbackMove, comment: fallbackComment });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

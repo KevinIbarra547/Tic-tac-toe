@@ -31,6 +31,16 @@ function updateModeButtons() {
   document.getElementById('mode-pvai').classList.toggle('active', mode === 'pvai');
 }
 
+function showAiOptions() {
+  document.getElementById('ai-options').style.display = (mode === 'pvai') ? 'block' : 'none';
+}
+
+function clearAiComment() {
+  const el = document.getElementById('ai-comment');
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
 function newGame() {
   board = Array(9).fill('');
   currentTurn = 'X';
@@ -38,10 +48,12 @@ function newGame() {
   aiThinking = false;
   renderBoard();
   document.getElementById('turn-indicator').textContent = 'Current turn: X';
+  clearAiComment();
 }
 
 function makeMove(index) {
   if (gameOver || board[index] !== '') return;
+  if (currentTurn === 'X') clearAiComment();
   board[index] = currentTurn;
 
   const winner = checkWinner(board);
@@ -68,20 +80,27 @@ function makeMove(index) {
 async function aiTurn() {
   aiThinking = true;
   try {
+    const difficulty = document.getElementById('difficulty').value;
+    const personality = document.getElementById('personality').value;
     const res = await fetch('/ai-move', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ board: board.slice() })
+      body: JSON.stringify({ board: board.slice(), difficulty, personality })
     });
     if (!res.ok) {
       console.error('aiTurn: /ai-move returned', res.status);
       return;
     }
     const data = await res.json();
-    const { move } = data;
+    const { move, comment } = data;
     if (typeof move !== 'number' || board[move] !== '') {
       console.error('aiTurn: invalid move from server:', move);
       return;
+    }
+    if (comment && typeof comment === 'string' && comment.trim()) {
+      const el = document.getElementById('ai-comment');
+      el.textContent = comment.trim();
+      el.style.display = 'block';
     }
     makeMove(move);
   } catch (err) {
@@ -141,6 +160,7 @@ async function refreshStatus() {
     logoutBtn.style.display = '';
     game.style.display = '';
     newGame();
+    showAiOptions();
     loadHistory();
   } else {
     status.textContent = 'Not logged in';
@@ -199,6 +219,8 @@ document.getElementById('mode-pvp').addEventListener('click', () => {
   if (mode === 'pvp') return;
   mode = 'pvp';
   updateModeButtons();
+  showAiOptions();
+  clearAiComment();
   newGame();
 });
 
@@ -206,6 +228,8 @@ document.getElementById('mode-pvai').addEventListener('click', () => {
   if (mode === 'pvai') return;
   mode = 'pvai';
   updateModeButtons();
+  showAiOptions();
+  clearAiComment();
   newGame();
 });
 

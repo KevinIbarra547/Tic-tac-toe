@@ -33,3 +33,24 @@
   background: #333;
   color: white;
 }
+
+#ai-options {
+  margin: 8px 0;
+}
+
+#ai-options label {
+  margin-right: 12px;
+}
+
+#ai-options select {
+  margin-left: 4px;
+}
+
+#ai-comment {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #f4f4f4;
+  border-left: 3px solid #888;
+  font-style: italic;
+  min-height: 1em;
+}
