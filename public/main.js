@@ -6,6 +6,11 @@ let currentTurn = 'X';
 let gameOver = false;
 let mode = 'pvp';
 let aiThinking = false;
+let playerLetter = 'X';
+
+function aiLetter() {
+  return playerLetter === 'X' ? 'O' : 'X';
+}
 
 function authHeaders() {
   const token = localStorage.getItem('token');
@@ -49,11 +54,12 @@ function newGame() {
   renderBoard();
   document.getElementById('turn-indicator').textContent = 'Current turn: X';
   clearAiComment();
+  if (mode === 'pvai' && aiLetter() === 'X') aiTurn();
 }
 
 function makeMove(index) {
   if (gameOver || board[index] !== '') return;
-  if (currentTurn === 'X') clearAiComment();
+  if (currentTurn === playerLetter) clearAiComment();
   board[index] = currentTurn;
 
   const winner = checkWinner(board);
@@ -74,7 +80,7 @@ function makeMove(index) {
   currentTurn = currentTurn === 'X' ? 'O' : 'X';
   renderBoard();
   document.getElementById('turn-indicator').textContent = `Current turn: ${currentTurn}`;
-  if (mode === 'pvai' && !gameOver && currentTurn === 'O') aiTurn();
+  if (mode === 'pvai' && !gameOver && currentTurn === aiLetter()) aiTurn();
 }
 
 async function aiTurn() {
@@ -85,7 +91,7 @@ async function aiTurn() {
     const res = await fetch('/ai-move', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ board: board.slice(), difficulty, personality })
+      body: JSON.stringify({ board: board.slice(), difficulty, personality, aiLetter: aiLetter() })
     });
     if (!res.ok) {
       console.error('aiTurn: /ai-move returned', res.status);
@@ -117,7 +123,7 @@ async function saveGame(winner, result) {
     await fetch('/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ winner, result, board: board.slice(), mode, difficulty, personality })
+      body: JSON.stringify({ winner, result, board: board.slice(), mode, difficulty, personality, playerLetter })
     });
     await loadHistory();
   } catch (err) {
@@ -215,6 +221,11 @@ document.getElementById('logout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', headers: { ...authHeaders() } });
   localStorage.removeItem('token');
   await refreshStatus();
+});
+
+document.getElementById('player-letter').addEventListener('change', (e) => {
+  playerLetter = e.target.value;
+  newGame();
 });
 
 document.getElementById('mode-pvp').addEventListener('click', () => {

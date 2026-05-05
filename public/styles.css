@@ -1,3 +1,15 @@
+#letter-selector {
+  margin-bottom: 8px;
+}
+
+#letter-selector label {
+  margin-right: 12px;
+}
+
+#letter-selector select {
+  margin-left: 4px;
+}
+
 nav {
   margin-bottom: 16px;
 }
