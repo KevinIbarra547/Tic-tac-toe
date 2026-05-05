@@ -9,6 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const GAMES_FILE = path.join(__dirname, 'data', 'games.json');
+const REFLECTIONS_FILE = path.join(__dirname, 'data', 'reflections.json');
 
 if (!process.env.GROQ_API_KEY) {
   console.warn('WARNING: GROQ_API_KEY not set in .env — AI moves will use random fallback');
@@ -46,6 +47,16 @@ function readGames() {
 function writeGames(games) {
   fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
   fs.writeFileSync(GAMES_FILE, JSON.stringify(games, null, 2));
+}
+
+function readReflections() {
+  try {
+    const raw = fs.readFileSync(REFLECTIONS_FILE, 'utf8');
+    if (!raw.trim()) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 function generateToken() {
@@ -134,18 +145,30 @@ app.post('/logout', (req, res) => {
 
 app.post('/games', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const { winner, result, board } = req.body;
+  const { winner, result, board, mode, difficulty, personality } = req.body;
   if (!['win', 'draw'].includes(result)) {
     return res.status(400).json({ error: 'Invalid result' });
   }
   if (!Array.isArray(board) || board.length !== 9) {
     return res.status(400).json({ error: 'Invalid board' });
   }
+  const gameMode = mode === 'pvai' ? 'pvai' : 'pvp';
+  if (gameMode === 'pvai') {
+    if (!['easy', 'medium', 'hard'].includes(difficulty)) {
+      return res.status(400).json({ error: 'Invalid difficulty for pvai game' });
+    }
+    if (!['pirate', 'wizard', 'robot'].includes(personality)) {
+      return res.status(400).json({ error: 'Invalid personality for pvai game' });
+    }
+  }
   const record = {
     username: req.user.username,
     winner: winner || null,
     result,
     board,
+    mode: gameMode,
+    difficulty: gameMode === 'pvai' ? difficulty : null,
+    personality: gameMode === 'pvai' ? personality : null,
     timestamp: new Date().toISOString()
   };
   const games = readGames();
@@ -169,6 +192,73 @@ app.get('/me', (req, res) => {
   } else {
     res.json({ loggedIn: false });
   }
+});
+
+app.get('/leaderboard', (req, res) => {
+  const games = readGames();
+  const stats = {};
+  for (const game of games) {
+    const u = game.username;
+    if (!stats[u]) stats[u] = { wins: 0, losses: 0, draws: 0 };
+    if (game.result === 'draw') {
+      stats[u].draws++;
+    } else if (game.result === 'win') {
+      if (game.winner === 'X') {
+        stats[u].wins++;
+      } else {
+        stats[u].losses++;
+      }
+    }
+  }
+  const qualified = [];
+  let stillQualifyingCount = 0;
+  for (const [username, s] of Object.entries(stats)) {
+    const totalGames = s.wins + s.losses + s.draws;
+    if (totalGames >= 5) {
+      qualified.push({
+        username,
+        wins: s.wins,
+        losses: s.losses,
+        draws: s.draws,
+        totalGames,
+        winRate: s.wins / totalGames
+      });
+    } else {
+      stillQualifyingCount++;
+    }
+  }
+  qualified.sort((a, b) => b.winRate - a.winRate || b.totalGames - a.totalGames);
+  res.json({ qualified, stillQualifyingCount });
+});
+
+app.get('/ai-stats', (req, res) => {
+  const games = readGames();
+  const initBucket = () => ({ games: 0, aiWins: 0, playerWins: 0, draws: 0, aiWinRate: 0 });
+  const byDifficulty = { easy: initBucket(), medium: initBucket(), hard: initBucket() };
+  const byPersonality = { pirate: initBucket(), wizard: initBucket(), robot: initBucket() };
+  for (const game of games) {
+    if (game.mode !== 'pvai' || !game.difficulty || !game.personality) continue;
+    const d = byDifficulty[game.difficulty];
+    const p = byPersonality[game.personality];
+    if (!d || !p) continue;
+    for (const bucket of [d, p]) {
+      bucket.games++;
+      if (game.result === 'draw') bucket.draws++;
+      else if (game.winner === 'O') bucket.aiWins++;
+      else if (game.winner === 'X') bucket.playerWins++;
+    }
+  }
+  for (const bucket of [
+    ...Object.values(byDifficulty),
+    ...Object.values(byPersonality)
+  ]) {
+    bucket.aiWinRate = bucket.games > 0 ? bucket.aiWins / bucket.games : 0;
+  }
+  res.json({ byDifficulty, byPersonality });
+});
+
+app.get('/reflections', (req, res) => {
+  res.json(readReflections());
 });
 
 const DIFFICULTY_INSTRUCTIONS = {

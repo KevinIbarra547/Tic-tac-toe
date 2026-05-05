@@ -112,10 +112,12 @@ async function aiTurn() {
 
 async function saveGame(winner, result) {
   try {
+    const difficulty = mode === 'pvai' ? document.getElementById('difficulty').value : null;
+    const personality = mode === 'pvai' ? document.getElementById('personality').value : null;
     await fetch('/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ winner, result, board: board.slice() })
+      body: JSON.stringify({ winner, result, board: board.slice(), mode, difficulty, personality })
     });
     await loadHistory();
   } catch (err) {
