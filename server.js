@@ -52,6 +52,31 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+function findTacticalMove(board, player) {
+  const opponent = player === 'O' ? 'X' : 'O';
+  const lines = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  for (const [a,b,c] of lines) {
+    const cells = [board[a], board[b], board[c]];
+    if (cells.filter(x => x === player).length === 2 && cells.includes('')) {
+      return [a,b,c][cells.indexOf('')];
+    }
+  }
+  for (const [a,b,c] of lines) {
+    const cells = [board[a], board[b], board[c]];
+    if (cells.filter(x => x === opponent).length === 2 && cells.includes('')) {
+      return [a,b,c][cells.indexOf('')];
+    }
+  }
+  if (board[4] === '') return 4;
+  for (const i of [0,2,6,8]) { if (board[i] === '') return i; }
+  for (const i of [1,3,5,7]) { if (board[i] === '') return i; }
+  return null;
+}
+
 function authMiddleware(req, res, next) {
   const header = req.headers['authorization'];
   if (!header || !header.startsWith('Bearer ')) {
@@ -193,6 +218,7 @@ app.post('/ai-move', async (req, res) => {
 
   const fallbackMove = available[Math.floor(Math.random() * available.length)];
   const fallbackComment = PERSONALITY_FALLBACKS[personality];
+  const tacticalMove = difficulty === 'hard' ? findTacticalMove(board, 'O') : null;
 
   const prompt = `You are playing Tic Tac Toe as player O. Positions are indexed 0-8, left-to-right, top-to-bottom:
 
@@ -222,18 +248,18 @@ Respond with ONLY valid JSON: {"move": <index from available moves>, "comment": 
         messages: [{ role: 'user', content: prompt }]
       });
       const parsed = JSON.parse(completion.choices[0].message.content);
-      const move = Number(parsed.move);
+      const move = (difficulty === 'hard' && tacticalMove !== null) ? tacticalMove : Number(parsed.move);
       if (!available.includes(move)) continue;
       const comment = (typeof parsed.comment === 'string' && parsed.comment.trim())
         ? parsed.comment.trim()
         : fallbackComment;
       return res.json({ move, comment });
-    } catch (_) {
-      // attempt failed, try again
+    } catch (err) {
+      console.error('Groq attempt', attempt, 'failed:', err.message);
     }
   }
 
-  res.json({ move: fallbackMove, comment: fallbackComment });
+  res.json({ move: tacticalMove !== null ? tacticalMove : fallbackMove, comment: fallbackComment });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
