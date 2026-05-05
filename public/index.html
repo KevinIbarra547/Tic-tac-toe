@@ -33,6 +33,14 @@
 
     <div id="game" style="display:none">
       <h2>Game</h2>
+      <div id="letter-selector">
+        <label>Play as:
+          <select id="player-letter">
+            <option value="X" selected>X (go first)</option>
+            <option value="O">O (go second)</option>
+          </select>
+        </label>
+      </div>
       <div id="mode-toggle">
         <button id="mode-pvp" class="active" data-mode="pvp">vs Human</button>
         <button id="mode-pvai" data-mode="pvai">vs AI</button>

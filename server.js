@@ -145,7 +145,7 @@ app.post('/logout', (req, res) => {
 
 app.post('/games', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const { winner, result, board, mode, difficulty, personality } = req.body;
+  const { winner, result, board, mode, difficulty, personality, playerLetter } = req.body;
   if (!['win', 'draw'].includes(result)) {
     return res.status(400).json({ error: 'Invalid result' });
   }
@@ -161,6 +161,7 @@ app.post('/games', (req, res) => {
       return res.status(400).json({ error: 'Invalid personality for pvai game' });
     }
   }
+  const resolvedPlayerLetter = (playerLetter === 'O') ? 'O' : 'X';
   const record = {
     username: req.user.username,
     winner: winner || null,
@@ -169,6 +170,7 @@ app.post('/games', (req, res) => {
     mode: gameMode,
     difficulty: gameMode === 'pvai' ? difficulty : null,
     personality: gameMode === 'pvai' ? personality : null,
+    playerLetter: resolvedPlayerLetter,
     timestamp: new Date().toISOString()
   };
   const games = readGames();
@@ -200,10 +202,11 @@ app.get('/leaderboard', (req, res) => {
   for (const game of games) {
     const u = game.username;
     if (!stats[u]) stats[u] = { wins: 0, losses: 0, draws: 0 };
+    const pLetter = game.playerLetter || 'X';
     if (game.result === 'draw') {
       stats[u].draws++;
     } else if (game.result === 'win') {
-      if (game.winner === 'X') {
+      if (game.winner === pLetter) {
         stats[u].wins++;
       } else {
         stats[u].losses++;
@@ -284,7 +287,7 @@ const PERSONALITY_FALLBACKS = {
 app.post('/ai-move', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
 
-  const { board, difficulty, personality } = req.body;
+  const { board, difficulty, personality, aiLetter } = req.body;
 
   if (!Array.isArray(board) || board.length !== 9 ||
       !board.every(c => c === 'X' || c === 'O' || c === '')) {
@@ -299,6 +302,12 @@ app.post('/ai-move', async (req, res) => {
     return res.status(400).json({ error: 'personality must be pirate, wizard, or robot' });
   }
 
+  if (!aiLetter || !['X', 'O'].includes(aiLetter)) {
+    return res.status(400).json({ error: 'aiLetter must be X or O' });
+  }
+
+  const opponentLetter = aiLetter === 'X' ? 'O' : 'X';
+
   const available = [];
   board.forEach((cell, i) => { if (cell === '') available.push(i); });
 
@@ -308,9 +317,9 @@ app.post('/ai-move', async (req, res) => {
 
   const fallbackMove = available[Math.floor(Math.random() * available.length)];
   const fallbackComment = PERSONALITY_FALLBACKS[personality];
-  const tacticalMove = difficulty === 'hard' ? findTacticalMove(board, 'O') : null;
+  const tacticalMove = difficulty === 'hard' ? findTacticalMove(board, aiLetter) : null;
 
-  const prompt = `You are playing Tic Tac Toe as player O. Positions are indexed 0-8, left-to-right, top-to-bottom:
+  const prompt = `You are playing Tic Tac Toe as player ${aiLetter}. Your opponent is player ${opponentLetter}. Positions are indexed 0-8, left-to-right, top-to-bottom:
 
  0 | 1 | 2
 -----------
