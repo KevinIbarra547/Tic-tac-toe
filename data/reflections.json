@@ -1,0 +1,82 @@
+[
+  {
+    "checkpoint": "CP01-world",
+    "title": "Hello World Express scaffold",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP01-world",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP02-accounts",
+    "title": "Signup, login, logout with sessions",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP02-accounts",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP03-game",
+    "title": "3x3 grid clickable game board",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP03-game",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP04-pvp",
+    "title": "Win and draw detection",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP04-pvp",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP05-save",
+    "title": "Persist games to JSON, show user history",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP05-save",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP06-ai",
+    "title": "Groq-powered AI opponent",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP06-ai",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP07-levels",
+    "title": "3 difficulties + 3 personalities, hybrid AI",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP07-levels",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  },
+  {
+    "checkpoint": "CP08-stats",
+    "title": "Leaderboard, AI stats, Checkpoints page",
+    "tag_url": "https://github.com/KevinIbarra547/Tic-tac-toe/releases/tag/CP08-stats",
+    "what_built": "TODO",
+    "what_was_hard": "TODO",
+    "what_id_do_differently": "TODO",
+    "ai_usage": "TODO",
+    "ab_note": "TODO"
+  }
+]

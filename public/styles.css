@@ -1,3 +1,11 @@
+nav {
+  margin-bottom: 16px;
+}
+
+nav a {
+  margin-right: 12px;
+}
+
 #board {
   display: grid;
   grid-template-columns: repeat(3, 60px);
