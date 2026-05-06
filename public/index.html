@@ -33,35 +33,45 @@
 
     <div id="game" style="display:none">
       <h2>Game</h2>
-      <div id="letter-selector">
-        <label>Play as:
-          <select id="player-letter">
-            <option value="X" selected>X (go first)</option>
-            <option value="O">O (go second)</option>
-          </select>
-        </label>
+
+      <div id="game-settings" class="pvp-mode">
+        <p class="label">Game settings</p>
+        <div class="row">
+          <label id="mode-row">
+            Mode
+            <div id="mode-toggle">
+              <button id="mode-pvp" class="active" data-mode="pvp">vs Human</button>
+              <button id="mode-pvai" data-mode="pvai">vs AI</button>
+            </div>
+          </label>
+          <label id="letter-row">
+            Play as
+            <select id="player-letter">
+              <option value="X" selected>X (go first)</option>
+              <option value="O">O (go second)</option>
+            </select>
+          </label>
+          <label id="difficulty-row">
+            Difficulty
+            <select id="difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+          <label id="personality-row">
+            Personality
+            <select id="personality">
+              <option value="pirate">Pirate</option>
+              <option value="wizard" selected>Wizard</option>
+              <option value="robot">Robot</option>
+            </select>
+          </label>
+        </div>
       </div>
-      <div id="mode-toggle">
-        <button id="mode-pvp" class="active" data-mode="pvp">vs Human</button>
-        <button id="mode-pvai" data-mode="pvai">vs AI</button>
-      </div>
-      <div id="ai-options" style="display:none">
-        <label>Difficulty:
-          <select id="difficulty">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </label>
-        <label>Personality:
-          <select id="personality">
-            <option value="pirate">Pirate</option>
-            <option value="wizard" selected>Wizard</option>
-            <option value="robot">Robot</option>
-          </select>
-        </label>
-      </div>
+
       <p id="turn-indicator">Current turn: X</p>
+      <p id="ai-thinking" style="display:none">AI is thinking</p>
       <div id="board">
         <button class="cell" data-index="0"></button>
         <button class="cell" data-index="1"></button>
@@ -74,10 +84,25 @@
         <button class="cell" data-index="8"></button>
       </div>
       <div id="ai-comment" style="display:none"></div>
-      <button id="new-game-button">New game</button>
+      <button id="new-game-button" class="primary">New game</button>
       <div id="history">
         <h3>Your game history</h3>
         <ul id="history-list"></ul>
+      </div>
+    </div>
+
+    <div id="replay-modal">
+      <div id="replay-modal-content">
+        <button id="replay-close" aria-label="Close">&#x2715;</button>
+        <h2>Game replay</h2>
+        <p id="replay-meta"></p>
+        <div id="replay-board"></div>
+        <p id="replay-counter"></p>
+        <div id="replay-controls">
+          <button id="replay-prev">&#8592; Prev</button>
+          <button id="replay-auto">Auto-play</button>
+          <button id="replay-next">Next &#8594;</button>
+        </div>
       </div>
     </div>
 

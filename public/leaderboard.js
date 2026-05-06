@@ -8,15 +8,34 @@ async function loadLeaderboard() {
       container.textContent = 'No players have completed 5+ games yet.';
     } else {
       const table = document.createElement('table');
-      const header = document.createElement('tr');
-      header.innerHTML = '<th>Rank</th><th>Player</th><th>Record</th><th>Win Rate</th>';
-      table.appendChild(header);
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['Rank', 'Player', 'Record', 'Win Rate'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
       qualified.forEach((player, i) => {
         const row = document.createElement('tr');
         const pct = Math.round(player.winRate * 100);
-        row.innerHTML = `<td>${i + 1}</td><td>${player.username}</td><td>${player.wins}W / ${player.losses}L / ${player.draws}D</td><td>${pct}%</td>`;
-        table.appendChild(row);
+        [
+          i + 1,
+          player.username,
+          `${player.wins}W / ${player.losses}L / ${player.draws}D`,
+          `${pct}%`
+        ].forEach(text => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
       });
+      table.appendChild(tbody);
+
       container.innerHTML = '';
       container.appendChild(table);
     }
@@ -35,11 +54,12 @@ function renderStatBuckets(containerId, buckets) {
   container.innerHTML = '';
   for (const [label, data] of Object.entries(buckets)) {
     const p = document.createElement('p');
+    const name = label.charAt(0).toUpperCase() + label.slice(1);
     if (data.games === 0) {
-      p.textContent = `${label.charAt(0).toUpperCase() + label.slice(1)}: no data`;
+      p.textContent = `${name}: no data`;
     } else {
       const pct = Math.round(data.aiWinRate * 100);
-      p.textContent = `${label.charAt(0).toUpperCase() + label.slice(1)}: ${pct}% AI win rate (${data.games} game${data.games !== 1 ? 's' : ''})`;
+      p.textContent = `${name}: ${pct}% AI win rate (${data.games} game${data.games !== 1 ? 's' : ''})`;
     }
     container.appendChild(p);
   }
