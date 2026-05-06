@@ -8,6 +8,8 @@ let mode = 'pvp';
 let aiThinking = false;
 let playerLetter = 'X';
 
+let moveOrder = [];
+
 // --- replay state ---
 let replayMoves = [];
 let currentMoveIndex = 0;
@@ -71,6 +73,7 @@ function newGame() {
   currentTurn = 'X';
   gameOver = false;
   aiThinking = false;
+  moveOrder = [];
   renderBoard();
   document.getElementById('turn-indicator').textContent = 'Current turn: X';
   clearAiComment();
@@ -80,6 +83,7 @@ function newGame() {
 
 function makeMove(index) {
   if (gameOver || board[index] !== '') return;
+  moveOrder.push({ index, mark: currentTurn });
   if (currentTurn === playerLetter) clearAiComment();
   board[index] = currentTurn;
 
@@ -154,7 +158,7 @@ async function saveGame(winner, result) {
     await fetch('/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ winner, result, board: board.slice(), mode, difficulty, personality, playerLetter })
+      body: JSON.stringify({ winner, result, board: board.slice(), mode, difficulty, personality, playerLetter, moveOrder: moveOrder.slice() })
     });
     await loadHistory();
   } catch (err) {
@@ -224,7 +228,9 @@ function renderReplayBoard(pLetter) {
 }
 
 function openReplay(game) {
-  replayMoves = buildReplayMoves(game.board);
+  replayMoves = (Array.isArray(game.moveOrder) && game.moveOrder.length > 0)
+    ? game.moveOrder.slice()
+    : buildReplayMoves(game.board);
   currentMoveIndex = 0;
   if (autoplayInterval) { clearInterval(autoplayInterval); autoplayInterval = null; }
 

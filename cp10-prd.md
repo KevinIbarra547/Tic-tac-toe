@@ -28,11 +28,9 @@ The game replay feature builds on existing data — every saved game records the
 7. Player clicks the X close button (top right of modal) or the dark backdrop to close.
 
 ### How move sequence is reconstructed
-Game records save the FINAL board state, not the move history. We reconstruct order from the final board:
-- Count Xs and Os on final board. X always goes first.
-- Walk through cells scanning left-to-right, top-to-bottom, interleaving X cells then O cells alternately.
-- Known limitation: this is positional order, not click order. It gives a plausible visualization of the game, not a true timestamp replay.
-- To support true replay we'd need to save a move-sequence array on each game record — saved as a future feature.
+For games saved after the CP10 follow-up fix: each game record includes a `moveOrder` array capturing every move in exact click order. Replay uses this directly for a true reconstruction.
+
+For games saved before that fix (legacy records without `moveOrder`): replay falls back to reconstructing from the final board by interleaving X cells and O cells in left-to-right top-to-bottom order. The final board state is accurate, but the path to get there is approximated. This is a known limitation only for legacy games.
 
 ## How it works (technical)
 - Frontend: replay state (`replayMoves`, `currentMoveIndex`, `autoplayInterval`) is module-scoped. `openReplay(game)` reconstructs moves from `game.board`, renders the modal board, and wires up Prev/Next/Auto-play.
@@ -40,7 +38,6 @@ Game records save the FINAL board state, not the move history. We reconstruct or
 - All new behavior added to `main.js`. No new server routes needed — replay runs purely on the history data already fetched by `loadHistory()`.
 
 ## Out of scope
-- Saving move-order arrays on game records for true replay (future feature)
 - Light mode toggle
 - Sound effects
 - Custom fonts (system stack stays)

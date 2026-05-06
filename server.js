@@ -145,7 +145,7 @@ app.post('/logout', (req, res) => {
 
 app.post('/games', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const { winner, result, board, mode, difficulty, personality, playerLetter } = req.body;
+  const { winner, result, board, mode, difficulty, personality, playerLetter, moveOrder } = req.body;
   if (!['win', 'draw'].includes(result)) {
     return res.status(400).json({ error: 'Invalid result' });
   }
@@ -161,6 +161,28 @@ app.post('/games', (req, res) => {
       return res.status(400).json({ error: 'Invalid personality for pvai game' });
     }
   }
+  let resolvedMoveOrder = null;
+  if (moveOrder !== undefined) {
+    if (!Array.isArray(moveOrder)) {
+      return res.status(400).json({ error: 'moveOrder must be an array' });
+    }
+    for (const m of moveOrder) {
+      if (typeof m !== 'object' || m === null) {
+        return res.status(400).json({ error: 'Invalid moveOrder entry' });
+      }
+      if (typeof m.index !== 'number' || m.index < 0 || m.index > 8) {
+        return res.status(400).json({ error: 'moveOrder entry has invalid index' });
+      }
+      if (m.mark !== 'X' && m.mark !== 'O') {
+        return res.status(400).json({ error: 'moveOrder entry has invalid mark' });
+      }
+    }
+    const markCount = board.filter(c => c === 'X' || c === 'O').length;
+    if (moveOrder.length > 0 && moveOrder.length !== markCount) {
+      return res.status(400).json({ error: 'moveOrder length does not match board state' });
+    }
+    if (moveOrder.length > 0) resolvedMoveOrder = moveOrder;
+  }
   const resolvedPlayerLetter = (playerLetter === 'O') ? 'O' : 'X';
   const record = {
     username: req.user.username,
@@ -171,6 +193,7 @@ app.post('/games', (req, res) => {
     difficulty: gameMode === 'pvai' ? difficulty : null,
     personality: gameMode === 'pvai' ? personality : null,
     playerLetter: resolvedPlayerLetter,
+    moveOrder: resolvedMoveOrder,
     timestamp: new Date().toISOString()
   };
   const games = readGames();
