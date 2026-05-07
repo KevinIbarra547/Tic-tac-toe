@@ -18,20 +18,37 @@ async function loadLeaderboard() {
       thead.appendChild(headRow);
       table.appendChild(thead);
 
+      const medals = ['🥇', '🥈', '🥉'];
       const tbody = document.createElement('tbody');
       qualified.forEach((player, i) => {
         const row = document.createElement('tr');
+        const rank = i + 1;
+        if (rank <= 3) row.classList.add(`rank-${rank}`);
+
         const pct = Math.round(player.winRate * 100);
-        [
-          i + 1,
-          player.username,
-          `${player.wins}W / ${player.losses}L / ${player.draws}D`,
-          `${pct}%`
-        ].forEach(text => {
+        const rankDisplay = rank <= 3 ? medals[rank - 1] : String(rank);
+
+        [rankDisplay, player.username, `${player.wins}W / ${player.losses}L / ${player.draws}D`].forEach(text => {
           const td = document.createElement('td');
           td.textContent = text;
           row.appendChild(td);
         });
+
+        const winRateTd = document.createElement('td');
+        winRateTd.className = 'win-rate-cell';
+        const pctText = document.createElement('div');
+        pctText.className = 'win-rate-pct';
+        pctText.textContent = `${pct}%`;
+        const barWrap = document.createElement('div');
+        barWrap.className = 'win-rate-bar';
+        const barFill = document.createElement('div');
+        barFill.className = 'win-rate-bar-fill';
+        barFill.style.width = `${pct}%`;
+        barWrap.appendChild(barFill);
+        winRateTd.appendChild(pctText);
+        winRateTd.appendChild(barWrap);
+        row.appendChild(winRateTd);
+
         tbody.appendChild(row);
       });
       table.appendChild(tbody);
@@ -52,17 +69,29 @@ async function loadLeaderboard() {
 function renderStatBuckets(containerId, buckets) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'stat-card-grid';
   for (const [label, data] of Object.entries(buckets)) {
-    const p = document.createElement('p');
+    const card = document.createElement('div');
     const name = label.charAt(0).toUpperCase() + label.slice(1);
     if (data.games === 0) {
-      p.textContent = `${name}: no data`;
+      card.className = 'stat-card stat-card-empty';
+      card.innerHTML =
+        `<p class="stat-label">${name}</p>` +
+        `<p class="stat-value">—</p>` +
+        `<p class="stat-meta">no data</p>`;
     } else {
       const pct = Math.round(data.aiWinRate * 100);
-      p.textContent = `${name}: ${pct}% AI win rate (${data.games} game${data.games !== 1 ? 's' : ''})`;
+      const highRate = data.aiWinRate > 0.5;
+      card.className = 'stat-card';
+      card.innerHTML =
+        `<p class="stat-label">${name}</p>` +
+        `<p class="stat-value${highRate ? ' stat-value-high' : ''}">${pct}%</p>` +
+        `<p class="stat-meta">${data.games} game${data.games !== 1 ? 's' : ''}</p>`;
     }
-    container.appendChild(p);
+    grid.appendChild(card);
   }
+  container.appendChild(grid);
 }
 
 async function loadAiStats() {
